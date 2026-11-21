@@ -1,0 +1,87 @@
+name: Build MiSTer2JAMMA module
+
+# Checks every day whether the official MiSTer distribution ships a new Linux kernel.
+# If so, rebuilds mister2jamma.ko for it and updates the downloader database (db/).
+#
+# Required setup (once):
+#   - the driver sources live in a PRIVATE repository (default: ajefr/MiSTer2JAMMA_driver,
+#     override with the repository variable DRIVER_REPO)
+#   - secret DRIVER_REPO_TOKEN: a fine-grained token with read access to that repository
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Rebuild even if this kernel is already known"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-module
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q p7zip-full lz4 zstd
+
+      - name: Detect official MiSTer kernel
+        id: kernel
+        run: |
+          if [ "${{ inputs.force }}" = "true" ]; then
+            python3 - <<'PY'
+          import json
+          json.dump({}, open("db/kernels.json", "w"))
+          PY
+          fi
+          python3 tools/detect_kernel.py
+          git checkout -- db/kernels.json
+
+      - name: Install cross toolchain
+        if: steps.kernel.outputs.new == 'true'
+        run: sudo apt-get install -y -q gcc-arm-linux-gnueabihf bc flex bison libssl-dev libelf-dev
+
+      - name: Checkout driver sources (private)
+        if: steps.kernel.outputs.new == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.DRIVER_REPO || 'ajefr/MiSTer2JAMMA_driver' }}
+          token: ${{ secrets.DRIVER_REPO_TOKEN }}
+          path: driver-src
+
+      - name: Build module
+        if: steps.kernel.outputs.new == 'true'
+        run: |
+          tools/build_module.sh "${{ steps.kernel.outputs.release }}" \
+            "${{ steps.kernel.outputs.build_date }}" \
+            "${{ steps.kernel.outputs.branch }}" driver-src
+          rm -rf driver-src
+
+      - name: Update database and publish
+        if: steps.kernel.outputs.new == 'true'
+        run: |
+          python3 - "${{ steps.kernel.outputs.linux_version }}" "${{ steps.kernel.outputs.release }}" <<'PY'
+          import json, sys
+          path = "db/kernels.json"
+          known = json.load(open(path))
+          known[sys.argv[1]] = sys.argv[2]
+          json.dump(dict(sorted(known.items())), open(path, "w"), indent=2)
+          open(path, "a").write("\n")
+          PY
+          python3 tools/make_db.py > /dev/null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add db
+          git commit -m "MiSTer2JAMMA module for kernel ${{ steps.kernel.outputs.release }} (Linux ${{ steps.kernel.outputs.linux_version }})"
+          git push
