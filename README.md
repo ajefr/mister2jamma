@@ -7,63 +7,59 @@ The driver is a small kernel module (`mister2jamma.ko`) loaded at boot. It is di
 [MiSTer Downloader](https://github.com/MiSTer-devel/Downloader_MiSTer) database, so it is updated
 together with everything else when you run `update_all` or `downloader`.
 
-## Installation (recommended)
+## Installation
 
-> Until the driver is installed, the JAMMA controls do not work. If you cannot reach the Scripts menu,
-> see [First setup without any working controls](#first-setup-without-any-working-controls) below.
+> Until the driver is installed, the JAMMA controls do not work. Both methods below are designed for that:
+> no keyboard or controller is needed with method 1.
 
-1. **Update your MiSTer** to the latest official release (run `update_all` or `downloader` once).
-2. **Add the MiSTer2JAMMA database.** Open `downloader.ini` at the root of the SD card
-   (`/media/fat/downloader.ini`) with a text editor and add these two lines at the end:
+### Method 1: SD card prepared on a PC (easiest, no keyboard needed)
+
+1. **Install MiSTer** on the SD card with the official tool ([Mr. Fusion](https://github.com/MiSTer-devel/mr-fusion)),
+   put it in the MiSTer and let it finish until the MiSTer menu shows up. Then power off.
+2. **Put the SD card in your PC**, download
+   [`mister2jamma_sdcard.zip`](https://github.com/ajefr/mister2jamma/raw/main/sdcard/mister2jamma_sdcard.zip)
+   and **extract it at the root of the SD card**, replacing existing files. It contains:
+   - `linux/user-startup.sh` : loads the driver at every boot (it **replaces** your `user-startup.sh`:
+     if you added your own commands to it, use method 2 instead)
+   - `Scripts/.config/mister2jamma/` : the driver and its start script (hidden folder)
+   - `downloader_mister2jamma.ini` : adds the MiSTer2JAMMA database to the downloader (no need to edit `downloader.ini`)
+3. **Connect the MiSTer to the network** with an Ethernet cable (for WiFi, put your `wpa_supplicant.conf`
+   on the SD card as explained in the Mr. Fusion instructions).
+4. **Power on and wait.** If the MiSTer is not up to date yet (Mr. Fusion installs an older release), the first
+   boot updates it automatically in the background, then reboots by itself. This can take several minutes.
+   After that, the four players, the volume and the balance work from the JAMMA connector.
+
+From now on, just run `update_all` (or `downloader`) as usual: when the official MiSTer Linux kernel changes,
+a new module is built automatically and delivered by the database. If a boot finds no module for the running
+kernel, it runs the downloader once more in the background to fetch it (log in
+`Scripts/.config/mister2jamma/auto_update.log`).
+
+### Method 2: existing MiSTer installation (keeps your `user-startup.sh`)
+
+1. **Add the MiSTer2JAMMA database**: copy `downloader_mister2jamma.ini` (from the zip above) to the root of the
+   SD card, or add these two lines at the end of `downloader.ini`:
 
    ```ini
    [mister2jamma]
    db_url = https://raw.githubusercontent.com/ajefr/mister2jamma/main/db/db.json.zip
    ```
-3. **Run `update_all`** (or `downloader`) from the Scripts menu. It installs:
-   - `Scripts/.config/mister2jamma/` : the driver module and its start script (hidden folder)
-   - `Scripts/mister2jamma_install.sh` : the one-time setup script
-4. **Run `mister2jamma_install`** from the Scripts menu, **once**. It adds the driver to
+2. **Run `update_all`** (or `downloader`) from the Scripts menu. It installs the driver in
+   `Scripts/.config/mister2jamma/` and the one-time setup script `Scripts/mister2jamma_install.sh`.
+3. **Run `mister2jamma_install`** from the Scripts menu, **once**. It adds the driver to
    `linux/user-startup.sh` so that it is loaded at every boot, then loads it immediately.
    If you used the old MiSTer2JAMMA `user-startup.sh`, it is replaced (a copy is kept as
    `user-startup.sh.mister2jamma_old`).
-5. Reboot. The four players, the volume and the balance now work from the JAMMA connector.
 
-From now on, just run `update_all` as usual: when the official MiSTer Linux kernel changes, a new
-module is built automatically and delivered by the database.
-
-### First setup without any working controls
-
-Before the driver is installed, the JAMMA controls do not work, so the Scripts menu may not be reachable.
-Use one of these methods for the first setup only:
-
-**A. Temporary USB keyboard or USB controller (easiest).** Plug it into the MiSTer, follow steps 1 to 5 above
-(on a keyboard: `F12` opens the menu, arrows and `Enter` to navigate), then unplug it.
-
-**B. Over the network with SSH (no USB device needed).** Connect the MiSTer with an Ethernet cable, find its IP
-address on your router, and log in with `ssh root@<ip>` (password `1`). Then run:
+Without working controls, do these steps with a temporary USB keyboard (`F12` opens the menu), or over SSH:
+connect the MiSTer with an Ethernet cable, find its IP address on your router, log in with `ssh root@<ip>`
+(password `1`) and run:
 
 ```sh
-# 1. add the MiSTer2JAMMA database
-printf '\n[mister2jamma]\ndb_url = https://raw.githubusercontent.com/ajefr/mister2jamma/main/db/db.json.zip\n' >> /media/fat/downloader.ini
-# 2. update the MiSTer and download the driver
+printf '[mister2jamma]\ndb_url = https://raw.githubusercontent.com/ajefr/mister2jamma/main/db/db.json.zip\n' > /media/fat/downloader_mister2jamma.ini
 /media/fat/Scripts/update_all.sh      # or: /media/fat/Scripts/downloader.sh
-# 3. enable the driver at boot, then reboot
 bash /media/fat/Scripts/mister2jamma_install.sh
 reboot
 ```
-
-**C. Prepare the SD card on a PC.** Only if the SD card already holds an up-to-date MiSTer (Linux 6.18 or
-later). With the SD card in your PC:
-1. Add the two `[mister2jamma]` lines to `downloader.ini` (step 2 above).
-2. Create the folder `Scripts/.config/mister2jamma/` and copy into it `start.sh` and the `mister2jamma-*.ko` files from
-   [`db/files/Scripts/.config/mister2jamma/`](db/files/Scripts/.config/mister2jamma/).
-3. If `linux/user-startup.sh` does not exist, or if it is the old MiSTer2JAMMA one (second line
-   `#MISTER2JAMMA Version, aje_fr`), copy [`extras/sdcard/linux/user-startup.sh`](extras/sdcard/linux/user-startup.sh)
-   over it. Otherwise, add this line before any `exit` line (or at the end), with an editor that keeps Unix (LF)
-   line endings (Notepad++, VS Code...):
-   `[ -f /media/fat/Scripts/.config/mister2jamma/start.sh ] && sh /media/fat/Scripts/.config/mister2jamma/start.sh`
-4. Put the SD card back and boot: the controls work right away. Run `update_all` as usual afterwards.
 
 ### Checking that the driver is loaded
 
@@ -87,13 +83,13 @@ echo 2 > /sys/module/mister2jamma/parameters/scan_ms
 ### Troubleshooting
 
 - **Controls stopped working right after a MiSTer Linux update**: the module for the new kernel may not be
-  published yet (it is built within 24 hours). Run `update_all` again later, with a keyboard or USB controller.
+  published yet (it is built within 24 hours). Each boot retries automatically: reboot the MiSTer later.
   `uname -r` shows your kernel version; the matching file is `Scripts/.config/mister2jamma/mister2jamma-<version>.ko`.
 - **Nothing happens at boot**: check that `/media/fat/linux/user-startup.sh` contains the line
   `[ -f /media/fat/Scripts/.config/mister2jamma/start.sh ] && sh /media/fat/Scripts/.config/mister2jamma/start.sh`
   and was not saved with Windows line endings. Running `mister2jamma_install` again fixes both.
-- **Uninstall**: remove the `[mister2jamma]` section from `downloader.ini`, remove the line above from
-  `linux/user-startup.sh`, and run `update_all`.
+- **Uninstall**: first remove the line above from `linux/user-startup.sh`, then delete `downloader_mister2jamma.ini`
+  (and the `[mister2jamma]` section of `downloader.ini` if you added it there), and run `update_all`.
 
 ## How it works
 

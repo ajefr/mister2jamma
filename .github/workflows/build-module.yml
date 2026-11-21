@@ -80,8 +80,9 @@ jobs:
           open(path, "a").write("\n")
           PY
           python3 tools/make_db.py > /dev/null
+          python3 tools/make_sdcard_zip.py > /dev/null
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add db
+          git add db sdcard
           git commit -m "MiSTer2JAMMA module for kernel ${{ steps.kernel.outputs.release }} (Linux ${{ steps.kernel.outputs.linux_version }})"
           git push
