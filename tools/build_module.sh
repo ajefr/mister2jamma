@@ -33,5 +33,5 @@ make -s -C "$DRIVER" KDIR="$WORK" clean >/dev/null 2>&1 || true
 make -s -C "$DRIVER" KDIR="$WORK" 2>&1 | grep -v -E "Module.symvers|unresolved symbol|KBUILD_MODPOST_WARN|modpost: \".*\" \[" || true
 test -f "$DRIVER/mister2jamma.ko"
 strings "$DRIVER/mister2jamma.ko" | grep -q "vermagic=$RELEASE " || { echo "vermagic mismatch" >&2; exit 1; }
-cp "$DRIVER/mister2jamma.ko" "$REPO/db/files/linux/mister2jamma/mister2jamma-$RELEASE.ko"
-echo "Built db/files/linux/mister2jamma/mister2jamma-$RELEASE.ko"
+cp "$DRIVER/mister2jamma.ko" "$REPO/db/files/Scripts/.config/mister2jamma/mister2jamma-$RELEASE.ko"
+echo "Built db/files/Scripts/.config/mister2jamma/mister2jamma-$RELEASE.ko"
