@@ -2,7 +2,7 @@
 # MiSTer2JAMMA: one-time setup, run it ONCE from the Scripts menu (or over SSH).
 # Adds the driver to linux/user-startup.sh so it is loaded at every boot, then loads it.
 US=/media/fat/linux/user-startup.sh
-START=/media/fat/linux/mister2jamma/start.sh
+START=/media/fat/Scripts/.config/mister2jamma/start.sh
 LINE="[ -f $START ] && sh $START"
 
 if [ ! -f "$START" ]; then
@@ -26,8 +26,10 @@ if [ -f "$US" ] && grep -q "MISTER2JAMMA Version, aje_fr" "$US"; then
 fi
 [ -f "$US" ] || new_startup
 sed -i 's/\r$//' "$US"	# Windows line endings
+# Earlier manual installs used linux/mister2jamma/: point the line to the new place
+sed -i "s#/media/fat/linux/mister2jamma/start.sh#$START#g" "$US"
 
-if grep -qF "mister2jamma/start.sh" "$US"; then
+if grep -qF "$START" "$US"; then
 	echo "Start at boot: already configured."
 else
 	if grep -qE '^[[:space:]]*exit' "$US"; then

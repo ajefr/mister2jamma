@@ -21,7 +21,7 @@ together with everything else when you run `update_all` or `downloader`.
    db_url = https://raw.githubusercontent.com/ajefr/mister2jamma/main/db/db.json.zip
    ```
 3. **Run `update_all`** (or `downloader`) from the Scripts menu. It installs:
-   - `linux/mister2jamma/` : the driver module and its start script
+   - `Scripts/.config/mister2jamma/` : the driver module and its start script (hidden folder)
    - `Scripts/mister2jamma_install.sh` : the one-time setup script
 4. **Run `mister2jamma_install`** from the Scripts menu, **once**. It adds the driver to
    `linux/user-startup.sh` so that it is loaded at every boot, then loads it immediately.
@@ -56,13 +56,13 @@ reboot
 **C. Prepare the SD card on a PC.** Only if the SD card already holds an up-to-date MiSTer (Linux 6.18 or
 later). With the SD card in your PC:
 1. Add the two `[mister2jamma]` lines to `downloader.ini` (step 2 above).
-2. Create the folder `linux/mister2jamma/` and copy into it `start.sh` and the `mister2jamma-*.ko` files from
-   [`db/files/linux/mister2jamma/`](db/files/linux/mister2jamma/).
+2. Create the folder `Scripts/.config/mister2jamma/` and copy into it `start.sh` and the `mister2jamma-*.ko` files from
+   [`db/files/Scripts/.config/mister2jamma/`](db/files/Scripts/.config/mister2jamma/).
 3. If `linux/user-startup.sh` does not exist, or if it is the old MiSTer2JAMMA one (second line
    `#MISTER2JAMMA Version, aje_fr`), copy [`extras/sdcard/linux/user-startup.sh`](extras/sdcard/linux/user-startup.sh)
    over it. Otherwise, add this line before any `exit` line (or at the end), with an editor that keeps Unix (LF)
    line endings (Notepad++, VS Code...):
-   `[ -f /media/fat/linux/mister2jamma/start.sh ] && sh /media/fat/linux/mister2jamma/start.sh`
+   `[ -f /media/fat/Scripts/.config/mister2jamma/start.sh ] && sh /media/fat/Scripts/.config/mister2jamma/start.sh`
 4. Put the SD card back and boot: the controls work right away. Run `update_all` as usual afterwards.
 
 ### Checking that the driver is loaded
@@ -88,9 +88,9 @@ echo 2 > /sys/module/mister2jamma/parameters/scan_ms
 
 - **Controls stopped working right after a MiSTer Linux update**: the module for the new kernel may not be
   published yet (it is built within 24 hours). Run `update_all` again later, with a keyboard or USB controller.
-  `uname -r` shows your kernel version; the matching file is `linux/mister2jamma/mister2jamma-<version>.ko`.
+  `uname -r` shows your kernel version; the matching file is `Scripts/.config/mister2jamma/mister2jamma-<version>.ko`.
 - **Nothing happens at boot**: check that `/media/fat/linux/user-startup.sh` contains the line
-  `[ -f /media/fat/linux/mister2jamma/start.sh ] && sh /media/fat/linux/mister2jamma/start.sh`
+  `[ -f /media/fat/Scripts/.config/mister2jamma/start.sh ] && sh /media/fat/Scripts/.config/mister2jamma/start.sh`
   and was not saved with Windows line endings. Running `mister2jamma_install` again fixes both.
 - **Uninstall**: remove the `[mister2jamma]` section from `downloader.ini`, remove the line above from
   `linux/user-startup.sh`, and run `update_all`.

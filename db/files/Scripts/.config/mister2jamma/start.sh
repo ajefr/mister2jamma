@@ -1,7 +1,7 @@
 #!/bin/sh
 # Chargement du driver MiSTer2JAMMA au demarrage.
 # A appeler depuis /media/fat/linux/user-startup.sh :
-#   [ -f /media/fat/linux/mister2jamma/start.sh ] && sh /media/fat/linux/mister2jamma/start.sh
+#   [ -f /media/fat/Scripts/.config/mister2jamma/start.sh ] && sh /media/fat/Scripts/.config/mister2jamma/start.sh
 # Cherche le module dans le dossier du script, quel que soit son nom
 DIR=$(cd "$(dirname "$0")" && pwd)
 KO="$DIR/mister2jamma-$(uname -r).ko"
